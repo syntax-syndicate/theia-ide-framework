@@ -33,7 +33,7 @@ import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
 import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableService } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIVariable } from '@theia/ai-core';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export interface ChatRequestInvocation {
@@ -84,7 +84,8 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
+        context?: AIVariableResolutionRequest[]
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
@@ -156,7 +157,8 @@ export class ChatServiceImpl implements ChatService {
 
     async sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
+        context: AIVariableResolutionRequest[] = []
     ): Promise<ChatRequestInvocation | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
@@ -177,7 +179,9 @@ export class ChatServiceImpl implements ChatService {
                 responseCompleted: Promise.resolve(chatResponseModel),
             };
         }
-        const requestModel = session.model.addRequest(parsedRequest, agent?.id);
+
+        const resolvedContext = await this.resolveContext(context, request, session);
+        const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
 
         for (const part of parsedRequest.parts) {
             if (part instanceof ParsedChatRequestVariablePart) {
@@ -222,6 +226,24 @@ export class ChatServiceImpl implements ChatService {
         }
 
         return invocation;
+    }
+
+    protected async resolveContext(
+        context: AIVariableResolutionRequest[],
+        request: ChatRequest,
+        session: ChatSessionInternal
+    ): Promise<ResolvedAIVariable[]> {
+        return await Promise.all(
+            context.map(async contextVariable => {
+                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, { request, model: session });
+                if (resolvedVariable) {
+                    return resolvedVariable;
+                } else {
+                    this.logger.warn(`Failed to resolve variable ${contextVariable.variable}`);
+                    return undefined;
+                }
+            })
+        ).then(results => results.filter((result): result is ResolvedAIVariable => result !== undefined));
     }
 
     async cancelRequest(sessionId: string, requestId: string): Promise<void> {

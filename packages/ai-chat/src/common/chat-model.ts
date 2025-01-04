@@ -125,6 +125,7 @@ export interface ChatRequestModel {
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
+    readonly context: ResolvedAIVariable[];
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
 }
@@ -627,6 +628,10 @@ export class ChatRequestModelImpl implements ChatRequestModel {
 
     get response(): ChatResponseModelImpl {
         return this._response;
+    }
+
+    get context(): ResolvedAIVariable[] {
+        return this._context;
     }
 
     get agentId(): string | undefined {
