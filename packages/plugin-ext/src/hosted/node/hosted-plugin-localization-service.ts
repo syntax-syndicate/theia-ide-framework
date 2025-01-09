@@ -290,9 +290,9 @@ function buildLocalizations(packageUri: string, localizations: PluginLocalizatio
             languageName: localization.languageName,
             localizedLanguageName: localization.localizedLanguageName,
             languagePack: true,
-            async getTranslations(): Promise<Record<string, string>> {
+            async getTranslations(): Promise<Map<string, string>> {
                 cachedLocalization ??= loadTranslations(packagePath, localization.translations);
-                return cachedLocalization;
+                return cachedLocalization.then(translations => new Map(Object.entries(translations)));
             },
         };
         theiaLocalizations.push(theiaLocalization);

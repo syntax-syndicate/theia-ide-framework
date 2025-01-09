@@ -25,7 +25,8 @@ export interface AsyncLocalizationProvider {
 }
 
 export interface Localization extends LanguageInfo {
-    translations: { [key: string]: string };
+    translations: Map<string, string>;
+    replacements?: Map<string, string>;
 }
 
 export interface LanguageInfo {
@@ -50,9 +51,14 @@ export namespace Localization {
     export function localize(localization: Localization | undefined, key: string, defaultValue: string, ...args: FormatType[]): string {
         let value = defaultValue;
         if (localization) {
-            const translation = localization.translations[key];
-            if (translation) {
-                value = normalize(translation);
+            const replacement = localization.replacements?.get(defaultValue);
+            if (replacement) {
+                value = replacement;
+            } else {
+                const translation = localization.translations.get(key);
+                if (translation) {
+                    value = normalize(translation);
+                }
             }
         }
         return format(value, args);

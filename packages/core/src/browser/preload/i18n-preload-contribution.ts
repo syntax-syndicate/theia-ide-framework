@@ -17,14 +17,19 @@
 import { PreloadContribution } from './preloader';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { nls } from '../../common/nls';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { LocalizationServer } from '../../common/i18n/localization-server';
+import { ContributionProvider } from '../../common';
+import { I18nReplacementContribution } from './i18n-replacement-contribution';
 
 @injectable()
 export class I18nPreloadContribution implements PreloadContribution {
 
     @inject(LocalizationServer)
     protected readonly localizationServer: LocalizationServer;
+
+    @inject(ContributionProvider) @named(I18nReplacementContribution)
+    protected readonly i18nReplacementContributions: ContributionProvider<I18nReplacementContribution>;
 
     async initialize(): Promise<void> {
         const defaultLocale = FrontendApplicationConfigProvider.get().defaultLocale;
@@ -33,8 +38,9 @@ export class I18nPreloadContribution implements PreloadContribution {
                 locale: defaultLocale
             });
         }
+        let locale = nls.locale ?? nls.defaultLocale;
         if (nls.locale && nls.locale !== nls.defaultLocale) {
-            const localization = await this.localizationServer.loadLocalization(nls.locale);
+            const localization = await this.localizationServer.loadLocalization(locale);
             if (localization.languagePack) {
                 nls.localization = localization;
             } else {
@@ -43,8 +49,24 @@ export class I18nPreloadContribution implements PreloadContribution {
                 Object.assign(nls, {
                     locale: defaultLocale || undefined
                 });
+                locale = defaultLocale;
             }
         }
+        const replacements = this.getReplacements(locale);
+        if (replacements.size > 0) {
+            nls.localization ??= { translations: new Map(), languageId: locale };
+            nls.localization.replacements = replacements;
+        }
+    }
+
+    protected getReplacements(locale: string): Map<string, string> {
+        const replacements = new Map<string, string>();
+        for (const contribution of this.i18nReplacementContributions.getContributions()) {
+            for (const [value, replacement] of Object.entries(contribution.getReplacement(locale))) {
+                replacements.set(value, replacement);
+            }
+        }
+        return replacements;
     }
 
 }

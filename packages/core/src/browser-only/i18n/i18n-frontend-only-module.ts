@@ -21,14 +21,10 @@ import { LanguageQuickPickService } from '../../browser/i18n/language-quick-pick
 export default new ContainerModule(bind => {
     const i18nMock: AsyncLocalizationProvider = {
         getCurrentLanguage: async (): Promise<string> => 'en',
-        setCurrentLanguage: async (_languageId: string): Promise<void> => {
-
-        },
-        getAvailableLanguages: async (): Promise<LanguageInfo[]> =>
-            []
-        ,
+        setCurrentLanguage: async (_languageId: string): Promise<void> => { },
+        getAvailableLanguages: async (): Promise<LanguageInfo[]> => [],
         loadLocalization: async (_languageId: string): Promise<Localization> => ({
-            translations: {},
+            translations: new Map(),
             languageId: 'en'
         })
     };

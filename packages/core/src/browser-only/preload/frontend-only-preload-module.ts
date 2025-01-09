@@ -22,7 +22,7 @@ import { Localization } from '../../common/i18n/localization';
 // loaded after regular preload module
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     const frontendOnlyLocalizationServer: LocalizationServer = {
-        loadLocalization: async (languageId: string): Promise<Localization> => ({ translations: {}, languageId })
+        loadLocalization: async (languageId: string): Promise<Localization> => ({ translations: new Map(), languageId })
     };
     if (isBound(LocalizationServer)) {
         rebind(LocalizationServer).toConstantValue(frontendOnlyLocalizationServer);

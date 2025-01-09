@@ -66,7 +66,7 @@ export class LocalizationRegistry {
         }));
     }
 
-    protected createLocalization(locale: string | LanguageInfo, translations: () => Promise<Record<string, string>>): LazyLocalization {
+    protected createLocalization(locale: string | LanguageInfo, translations: () => Promise<Map<string, string>>): LazyLocalization {
         let localization: LazyLocalization;
         if (typeof locale === 'string') {
             localization = {
@@ -82,22 +82,22 @@ export class LocalizationRegistry {
         return localization;
     }
 
-    protected flattenTranslations(localization: unknown): Record<string, string> {
+    protected flattenTranslations(localization: unknown): Map<string, string> {
         if (isObject(localization)) {
-            const record: Record<string, string> = {};
+            const record = new Map<string, string>();
             for (const [key, value] of Object.entries(localization)) {
                 if (typeof value === 'string') {
-                    record[key] = value;
+                    record.set(key, value);
                 } else if (isObject(value)) {
                     const flattened = this.flattenTranslations(value);
                     for (const [flatKey, flatValue] of Object.entries(flattened)) {
-                        record[`${key}/${flatKey}`] = flatValue;
+                        record.set(`${key}/${flatKey}`, flatValue);
                     }
                 }
             }
             return record;
         } else {
-            return {};
+            return new Map();
         }
     }
 

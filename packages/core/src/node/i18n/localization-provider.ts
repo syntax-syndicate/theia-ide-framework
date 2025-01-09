@@ -25,7 +25,7 @@ import { isObject } from '../../common/types';
  * Allows to load localizations on demand when requested by the user.
  */
 export interface LazyLocalization extends LanguageInfo {
-    getTranslations(): Promise<Record<string, string>>;
+    getTranslations(): Promise<Map<string, string>>;
 }
 
 export namespace LazyLocalization {
@@ -110,14 +110,16 @@ export class LocalizationProvider {
     async loadLocalization(languageId: string): Promise<Localization> {
         const merged: Localization = {
             languageId,
-            translations: {}
+            translations: new Map()
         };
         const localizations = await Promise.all(this.localizations.filter(e => e.languageId === languageId).map(LazyLocalization.toLocalization));
         for (const localization of localizations) {
             merged.languageName ||= localization.languageName;
             merged.localizedLanguageName ||= localization.localizedLanguageName;
             merged.languagePack ||= localization.languagePack;
-            Object.assign(merged.translations, localization.translations);
+            for (const [key, value] of localization.translations.entries()) {
+                merged.translations.set(key, value);
+            }
         }
         return merged;
     }
