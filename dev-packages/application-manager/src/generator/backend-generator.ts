@@ -41,7 +41,7 @@ require('reflect-metadata');
 // in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
 // https://github.com/electron/electron/issues/550#issuecomment-162037357
 // https://github.com/eclipse-theia/theia/pull/3534#issuecomment-439689082
-require('fix-path')();
+// require('fix-path')();
 
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
